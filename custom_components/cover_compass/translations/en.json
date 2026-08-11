@@ -1,0 +1,314 @@
+{
+  "title": "CoverCompass",
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "title": "House",
+        "description": "Use Home Assistant's location or override it for this virtual house.",
+        "data": {
+          "house_name": "House name",
+          "latitude": "Latitude",
+          "longitude": "Longitude",
+          "time_zone": "Time zone",
+          "house_rotation": "Overall house rotation"
+        },
+        "data_description": {
+          "house_rotation": "Added clockwise to every configured facade orientation. Usually 0°."
+        }
+      },
+      "cover": {
+        "title": "Cover and facade",
+        "description": "Select the physical cover and the direction the window faces. Position semantics are 0% closed and 100% fully open.",
+        "data": {
+          "name": "CoverCompass name",
+          "entity_id": "Physical cover",
+          "area_id": "Area",
+          "orientation_choice": "Orientation",
+          "custom_azimuth": "Custom orientation",
+          "enabled": "Automation enabled",
+          "dry_run": "Dry run for this cover"
+        },
+        "data_description": {
+          "custom_azimuth": "Used only when orientation is Custom. Degrees clockwise from geographic north."
+        }
+      },
+      "cover_policy": {
+        "title": "Solar policy and targets",
+        "description": "Exposure is a symmetric angle around the facade. Exit margins and delays prevent oscillation.",
+        "data": {
+          "exposure_angle": "Horizontal exposure half-angle",
+          "solar_exit_margin": "Solar exit margin",
+          "minimum_elevation": "Minimum solar elevation",
+          "maximum_elevation": "Maximum solar elevation",
+          "elevation_exit_margin": "Elevation exit margin",
+          "mode": "Automation mode",
+          "normal_position": "Normal position",
+          "shading_position": "Shading position",
+          "normal_tilt": "Normal tilt",
+          "shading_tilt": "Shading tilt",
+          "activation_delay": "Activation delay",
+          "clear_delay": "Clearing delay",
+          "minimum_movement_interval": "Minimum movement interval",
+          "manual_override_mode": "Manual override behavior",
+          "manual_override_until": "Manual override end time",
+          "advanced_match": "Advanced rule matching",
+          "advanced_conditions": "Advanced rule conditions"
+        }
+      },
+      "cover_time": {
+        "title": "Time window",
+        "description": "The start is inclusive and the end is exclusive. An end before the start crosses midnight; weekday selection applies to the start day.",
+        "data": {
+          "use_time_window": "Use this time window",
+          "start_kind": "Start type",
+          "start_time": "Start time",
+          "start_offset": "Start solar offset",
+          "end_kind": "End type",
+          "end_time": "End time",
+          "end_offset": "End solar offset",
+          "weekdays": "Start weekdays"
+        },
+        "data_description": {
+          "start_time": "Used for a fixed start.",
+          "end_time": "Used for a fixed end.",
+          "start_offset": "Minutes relative to sunrise or sunset; ignored for fixed time.",
+          "end_offset": "Minutes relative to sunrise or sunset; ignored for fixed time."
+        }
+      },
+      "cover_environment": {
+        "title": "Environmental confirmation",
+        "description": "Every configured condition must pass in the standard modes. Leave an entity empty to disable that condition. Clear thresholds provide hysteresis.",
+        "data": {
+          "outdoor_entity": "Outdoor temperature sensor",
+          "outdoor_activate": "Outdoor activation threshold",
+          "outdoor_clear": "Outdoor clear threshold",
+          "indoor_entity": "Indoor temperature sensor",
+          "indoor_activate": "Indoor activation threshold",
+          "indoor_clear": "Indoor clear threshold",
+          "illuminance_entity": "Illuminance or irradiance sensor",
+          "illuminance_activate": "Light activation threshold",
+          "illuminance_clear": "Light clear threshold",
+          "cloud_entity": "Cloud-cover sensor",
+          "cloud_activate": "Maximum cloud cover to activate",
+          "cloud_clear": "Cloud cover to clear",
+          "weather_entity_id": "Weather entity",
+          "allowed_weather_states": "Weather states that confirm shading"
+        }
+      },
+      "cover_safety": {
+        "title": "Safety",
+        "description": "Unknown or unavailable interlocks are treated conservatively. Wind retraction opens fully and has priority over comfort rules, but the global master switch remains an absolute movement cutoff.",
+        "data": {
+          "safety_entities": "Safety interlocks",
+          "safety_policy": "Interlock policy",
+          "wind_entity": "Wind-speed sensor",
+          "wind_unsafe": "Unsafe wind threshold",
+          "wind_safe": "Safe wind threshold",
+          "wind_retract": "Retract fully during unsafe wind"
+        }
+      },
+      "setup_complete": {
+        "title": "House covers",
+        "description": "Add another cover or finish setup. Global dry run starts enabled.",
+        "menu_options": {
+          "add_cover": "Add another cover",
+          "finish": "Finish setup"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure house",
+        "data": {
+          "house_name": "House name",
+          "latitude": "Latitude",
+          "longitude": "Longitude",
+          "time_zone": "Time zone",
+          "house_rotation": "Overall house rotation"
+        }
+      }
+    },
+    "error": {
+      "invalid_time_zone": "Select a valid IANA time zone.",
+      "cover_already_configured": "This physical cover is already managed by this house.",
+      "maximum_below_minimum": "Maximum elevation cannot be below minimum elevation.",
+      "advanced_conditions_required": "Select at least one condition for Advanced Rules.",
+      "override_time_required": "Select an end time for this override behavior.",
+      "time_window_required": "This automation mode requires a time window.",
+      "clear_above_activation": "The clear threshold must not exceed the activation threshold.",
+      "clear_below_activation": "The cloud clear threshold must not be below activation.",
+      "safe_above_unsafe": "The safe wind threshold must not exceed the unsafe threshold.",
+      "invalid_cover_configuration": "The cover configuration is inconsistent. Review the entered values."
+      ,"confirmation_required": "Confirm removal to continue."
+    },
+    "abort": {
+      "already_configured": "This house is already configured.",
+      "reconfigure_successful": "House configuration updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Manage CoverCompass",
+        "menu_options": {
+          "global": "Global settings",
+          "add_cover": "Add cover",
+          "edit_cover": "Edit cover",
+          "duplicate_cover": "Duplicate cover",
+          "remove_cover": "Remove cover"
+        }
+      },
+      "global": {
+        "title": "Global settings",
+        "data": {
+          "global_enabled": "Automation enabled",
+          "dry_run": "Dry run",
+          "reconcile_interval": "Reconciliation interval"
+        }
+      },
+      "edit_cover": {
+        "title": "Edit cover",
+        "data": {"cover_id": "Cover"}
+      },
+      "duplicate_cover": {
+        "title": "Duplicate cover",
+        "description": "The copied policy must be assigned to a different physical cover.",
+        "data": {"cover_id": "Cover to duplicate"}
+      },
+      "remove_cover": {
+        "title": "Remove cover",
+        "data": {"cover_id": "Cover"}
+      },
+      "confirm_remove": {
+        "title": "Remove {name}?",
+        "description": "This removes the CoverCompass definition. It does not delete or move the physical cover.",
+        "data": {"confirm": "Confirm removal"}
+      },
+      "cover": {
+        "title": "Cover and facade",
+        "description": "Select the physical cover and the direction the window faces. Position semantics are 0% closed and 100% fully open.",
+        "data": {
+          "name": "CoverCompass name",
+          "entity_id": "Physical cover",
+          "area_id": "Area",
+          "orientation_choice": "Orientation",
+          "custom_azimuth": "Custom orientation",
+          "enabled": "Automation enabled",
+          "dry_run": "Dry run for this cover"
+        }
+      },
+      "cover_policy": {
+        "title": "Solar policy and targets",
+        "data": {
+          "exposure_angle": "Horizontal exposure half-angle",
+          "solar_exit_margin": "Solar exit margin",
+          "minimum_elevation": "Minimum solar elevation",
+          "maximum_elevation": "Maximum solar elevation",
+          "elevation_exit_margin": "Elevation exit margin",
+          "mode": "Automation mode",
+          "normal_position": "Normal position",
+          "shading_position": "Shading position",
+          "normal_tilt": "Normal tilt",
+          "shading_tilt": "Shading tilt",
+          "activation_delay": "Activation delay",
+          "clear_delay": "Clearing delay",
+          "minimum_movement_interval": "Minimum movement interval",
+          "manual_override_mode": "Manual override behavior",
+          "manual_override_until": "Manual override end time",
+          "advanced_match": "Advanced rule matching",
+          "advanced_conditions": "Advanced rule conditions"
+        }
+      },
+      "cover_time": {
+        "title": "Time window",
+        "data": {
+          "use_time_window": "Use this time window",
+          "start_kind": "Start type",
+          "start_time": "Start time",
+          "start_offset": "Start solar offset",
+          "end_kind": "End type",
+          "end_time": "End time",
+          "end_offset": "End solar offset",
+          "weekdays": "Start weekdays"
+        }
+      },
+      "cover_environment": {
+        "title": "Environmental confirmation",
+        "data": {
+          "outdoor_entity": "Outdoor temperature sensor",
+          "outdoor_activate": "Outdoor activation threshold",
+          "outdoor_clear": "Outdoor clear threshold",
+          "indoor_entity": "Indoor temperature sensor",
+          "indoor_activate": "Indoor activation threshold",
+          "indoor_clear": "Indoor clear threshold",
+          "illuminance_entity": "Illuminance or irradiance sensor",
+          "illuminance_activate": "Light activation threshold",
+          "illuminance_clear": "Light clear threshold",
+          "cloud_entity": "Cloud-cover sensor",
+          "cloud_activate": "Maximum cloud cover to activate",
+          "cloud_clear": "Cloud cover to clear",
+          "weather_entity_id": "Weather entity",
+          "allowed_weather_states": "Weather states that confirm shading"
+        }
+      },
+      "cover_safety": {
+        "title": "Safety",
+        "data": {
+          "safety_entities": "Safety interlocks",
+          "safety_policy": "Interlock policy",
+          "wind_entity": "Wind-speed sensor",
+          "wind_unsafe": "Unsafe wind threshold",
+          "wind_safe": "Safe wind threshold",
+          "wind_retract": "Retract fully during unsafe wind"
+        }
+      }
+    },
+    "error": {
+      "cover_already_configured": "This physical cover is already managed by this house.",
+      "maximum_below_minimum": "Maximum elevation cannot be below minimum elevation.",
+      "advanced_conditions_required": "Select at least one condition for Advanced Rules.",
+      "override_time_required": "Select an end time for this override behavior.",
+      "time_window_required": "This automation mode requires a time window.",
+      "clear_above_activation": "The clear threshold must not exceed the activation threshold.",
+      "clear_below_activation": "The cloud clear threshold must not be below activation.",
+      "safe_above_unsafe": "The safe wind threshold must not exceed the unsafe threshold.",
+      "invalid_cover_configuration": "The cover configuration is inconsistent. Review the entered values."
+      ,"confirmation_required": "Confirm removal to continue."
+    }
+  },
+  "selector": {
+    "orientation": {"options": {"n": "North (0°)", "ne": "North-East (45°)", "e": "East (90°)", "se": "South-East (135°)", "s": "South (180°)", "sw": "South-West (225°)", "w": "West (270°)", "nw": "North-West (315°)", "custom": "Custom"}},
+    "automation_mode": {"options": {"disabled": "Disabled", "sun": "Sun only", "time": "Time only", "sun_and_time": "Sun AND Time", "sun_or_time": "Sun OR Time", "advanced": "Advanced Rules"}},
+    "manual_override_mode": {"options": {"disabled": "Disabled", "minutes_15": "15 minutes", "minutes_30": "30 minutes", "minutes_60": "1 hour", "next_transition": "Until next rule transition", "until_time": "Until configured time", "manual": "Until manually resumed"}},
+    "advanced_match": {"options": {"all": "All selected conditions", "any": "Any selected condition"}},
+    "advanced_condition": {"options": {"sun": "Sun exposure", "time": "Time window", "outdoor_temperature": "Outdoor temperature", "indoor_temperature": "Indoor temperature", "illuminance": "Illuminance / irradiance", "cloud_cover": "Cloud cover", "weather": "Weather state"}},
+    "endpoint_type": {"options": {"fixed": "Fixed time", "sunrise": "Sunrise relative", "sunset": "Sunset relative"}},
+    "weekday": {"options": {"0": "Monday", "1": "Tuesday", "2": "Wednesday", "3": "Thursday", "4": "Friday", "5": "Saturday", "6": "Sunday"}},
+    "safety_policy": {"options": {"block_lowering": "Block lowering only", "block_all": "Block all movement"}},
+    "weather_state": {"options": {"sunny": "Sunny", "clear-night": "Clear night", "partlycloudy": "Partly cloudy", "cloudy": "Cloudy", "fog": "Fog", "rainy": "Rainy", "pouring": "Pouring", "snowy": "Snowy", "snowy-rainy": "Snow and rain", "hail": "Hail", "lightning": "Lightning", "lightning-rainy": "Lightning and rain", "windy": "Windy", "windy-variant": "Windy and cloudy", "exceptional": "Exceptional"}}
+  },
+  "entity": {
+    "binary_sensor": {"sun_exposure": {"name": "Sun exposure"}},
+    "sensor": {
+      "solar_azimuth": {"name": "Solar azimuth"},
+      "solar_elevation": {"name": "Solar elevation"},
+      "active_shading_count": {"name": "Actively shaded covers"},
+      "manual_override_count": {"name": "Manual overrides"},
+      "solar_angle": {"name": "Solar angle"},
+      "cover_status": {"name": "State", "state": {"open": "Open", "shading": "Shading", "manual_override": "Manual override", "blocked": "Blocked", "paused": "Paused", "unavailable": "Unavailable"}}
+    },
+    "switch": {
+      "automation_enabled": {"name": "Automation enabled"},
+      "dry_run": {"name": "Dry run"},
+      "cover_automation_enabled": {"name": "Automation enabled"}
+    },
+    "button": {
+      "pause_automation": {"name": "Pause automation"},
+      "resume_automation": {"name": "Resume automation"}
+    }
+  },
+  "issues": {
+    "missing_entity": {"title": "CoverCompass entity is missing", "description": "{cover} references {entity_id}, but that entity no longer exists. Edit or remove the cover definition, or restore the entity."},
+    "invalid_configuration": {"title": "CoverCompass configuration is invalid", "description": "The stored CoverCompass configuration cannot be loaded. Restore a compatible backup or remove and configure the integration again."},
+    "unsupported_config_version": {"title": "CoverCompass configuration cannot be migrated", "description": "Stored configuration version {version} is not supported by this release (maximum {supported}). Restore a compatible backup or install a compatible CoverCompass release."}
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "domain": "cover_compass",
+  "name": "CoverCompass",
+  "codeowners": ["@dafes"],
+  "config_flow": true,
+  "dependencies": ["sun"],
+  "documentation": "https://github.com/dafes/CoverCompass",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/dafes/CoverCompass/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}

@@ -1,0 +1,43 @@
+[project]
+name = "cover-compass"
+version = "1.0.0"
+description = "Orientation-aware cover control for Home Assistant"
+readme = "README.md"
+requires-python = ">=3.14"
+license = "MIT"
+dependencies = []
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "--strict-markers --strict-config"
+
+[tool.coverage.run]
+branch = true
+source = ["custom_components.cover_compass"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 90
+
+[tool.ruff]
+target-version = "py314"
+line-length = 88
+preview = true
+
+[tool.ruff.lint]
+select = ["ASYNC", "B", "E", "F", "I", "RUF", "SIM", "UP"]
+ignore = [
+  "COM812",
+  "RUF029",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN", "ARG", "D", "PLR2004", "S101", "SLF001"]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+warn_unreachable = true
+exclude = [".venv"]
