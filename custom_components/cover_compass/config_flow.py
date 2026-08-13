@@ -45,6 +45,7 @@ from .model import (
     SafetyPolicy,
     new_cover_id,
 )
+from .plan import CoverPlan, PlannedShutter, PlanValidationError, parse_cover_plan
 
 ORIENTATIONS = [*ORIENTATION_DEGREES, "custom"]
 WEATHER_STATES = [
@@ -142,12 +143,67 @@ def _orientation_choice(azimuth: float) -> str:
     return "custom"
 
 
+def _house_data_from_plan(plan: CoverPlan) -> dict[str, Any]:
+    return {
+        CONF_HOUSE_NAME: plan.house.name,
+        CONF_LATITUDE: plan.house.latitude,
+        CONF_LONGITUDE: plan.house.longitude,
+        CONF_TIME_ZONE: plan.house.time_zone,
+        CONF_HOUSE_ROTATION: plan.house.rotation,
+    }
+
+
+def _covers_from_plan(
+    plan: CoverPlan,
+    assignments: Mapping[str, str],
+    existing_covers: list[dict[str, Any]],
+    *,
+    remove_unmapped: bool,
+) -> list[dict[str, Any]]:
+    existing_by_entity = {
+        str(cover.get("entity_id")): cover for cover in existing_covers
+    }
+    assigned_entities = set(assignments.values())
+    unmatched = [
+        cover
+        for cover in existing_covers
+        if cover.get("entity_id") not in assigned_entities
+    ]
+    reserved_ids = {str(cover.get("id")) for cover in existing_covers}
+    used_ids: set[str] = set()
+    imported: list[dict[str, Any]] = []
+    for shutter in plan.shutters:
+        entity_id = assignments[shutter.id]
+        current = existing_by_entity.get(entity_id)
+        if current is not None:
+            cover = dict(current)
+            cover_id = str(cover["id"])
+        else:
+            cover_id = shutter.id
+            while cover_id in reserved_ids or cover_id in used_ids:
+                cover_id = new_cover_id()
+            cover = {"id": cover_id, "entity_id": entity_id}
+        used_ids.add(cover_id)
+        cover.update({
+            "name": shutter.name,
+            "entity_id": entity_id,
+            "facade_azimuth": shutter.facade_azimuth,
+        })
+        imported.append(cover_to_dict(cover_from_dict(cover)))
+    if not remove_unmapped:
+        imported.extend(unmatched)
+    return imported
+
+
 class _CoverFlowMixin:
     """Reusable multi-step editor shared by setup and options flows."""
 
     hass: Any
     _working_cover: dict[str, Any]
     _editing_cover_id: str | None
+    _plan: CoverPlan | None
+    _plan_assignments: dict[str, str]
+    _plan_index: int
 
     if TYPE_CHECKING:
 
@@ -169,6 +225,87 @@ class _CoverFlowMixin:
 
     def _configured_covers(self) -> list[dict[str, Any]]:
         raise NotImplementedError
+
+    def _plan_import_fields(self) -> dict[vol.Marker, object]:
+        return {}
+
+    def _set_plan_import_options(self, _user_input: Mapping[str, Any]) -> None:
+        return
+
+    def _suggest_plan_entity(self, shutter: PlannedShutter) -> str | None:
+        return None
+
+    async def _async_plan_import_finished(
+        self, plan: CoverPlan, assignments: Mapping[str, str]
+    ) -> config_entries.ConfigFlowResult:
+        raise NotImplementedError
+
+    async def async_step_import_plan(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Validate a planner export before assigning physical entities."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                plan = parse_cover_plan(user_input["plan_json"])
+            except PlanValidationError as err:
+                errors["plan_json"] = err.code
+            else:
+                self._plan = plan
+                self._plan_assignments = {}
+                self._plan_index = 0
+                self._set_plan_import_options(user_input)
+                return await self.async_step_assign_plan_cover()
+        schema: dict[vol.Marker, object] = {
+            vol.Required("plan_json"): selector.TextSelector(
+                selector.TextSelectorConfig(multiline=True)
+            )
+        }
+        schema.update(self._plan_import_fields())
+        return self.async_show_form(
+            step_id="import_plan", data_schema=vol.Schema(schema), errors=errors
+        )
+
+    async def async_step_assign_plan_cover(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Assign one physical cover to the current planned shutter."""
+        if self._plan is None:
+            return await self.async_step_import_plan()
+        shutter = self._plan.shutters[self._plan_index]
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            entity_id = user_input["entity_id"]
+            if entity_id in self._plan_assignments.values():
+                errors["entity_id"] = "plan_entity_already_assigned"
+            else:
+                self._plan_assignments[shutter.id] = entity_id
+                self._plan_index += 1
+                if self._plan_index == len(self._plan.shutters):
+                    return await self._async_plan_import_finished(
+                        self._plan, self._plan_assignments
+                    )
+                return await self.async_step_assign_plan_cover()
+        suggestion = self._suggest_plan_entity(shutter)
+        marker = (
+            vol.Required("entity_id", default=suggestion)
+            if suggestion
+            else vol.Required("entity_id")
+        )
+        return self.async_show_form(
+            step_id="assign_plan_cover",
+            data_schema=vol.Schema({
+                marker: selector.EntitySelector(
+                    selector.EntitySelectorConfig(domain="cover")
+                )
+            }),
+            errors=errors,
+            description_placeholders={
+                "name": shutter.name,
+                "azimuth": f"{shutter.facade_azimuth:.1f}°",
+                "progress": f"{self._plan_index + 1}/{len(self._plan.shutters)}",
+            },
+        )
 
     async def _async_cover_finished(
         self, cover: dict[str, Any]
@@ -581,6 +718,9 @@ class CoverCompassConfigFlow(_CoverFlowMixin, config_entries.ConfigFlow, domain=
         self._working_cover = {}
         self._editing_cover_id = None
         self._initial_options: dict[str, Any] = {}
+        self._plan = None
+        self._plan_assignments = {}
+        self._plan_index = 0
 
     @staticmethod
     @callback
@@ -593,6 +733,16 @@ class CoverCompassConfigFlow(_CoverFlowMixin, config_entries.ConfigFlow, domain=
         return self._covers
 
     async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Choose visual-plan import or the manual setup flow."""
+        if user_input is not None:
+            return await self.async_step_manual_setup(user_input)
+        return self.async_show_menu(
+            step_id="user", menu_options=["import_plan", "manual_setup"]
+        )
+
+    async def async_step_manual_setup(
         self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
         """Configure the house and default location."""
@@ -614,8 +764,22 @@ class CoverCompassConfigFlow(_CoverFlowMixin, config_entries.ConfigFlow, domain=
                 self._begin_cover()
                 return await self.async_step_cover()
         return self.async_show_form(
-            step_id="user", data_schema=_house_schema(self.hass), errors=errors
+            step_id="manual_setup", data_schema=_house_schema(self.hass), errors=errors
         )
+
+    async def _async_plan_import_finished(
+        self, plan: CoverPlan, assignments: Mapping[str, str]
+    ) -> config_entries.ConfigFlowResult:
+        house_data = _house_data_from_plan(plan)
+        unique_id = (
+            f"{plan.house.name.strip().casefold()}:"
+            f"{plan.house.latitude:.6f}:{plan.house.longitude:.6f}"
+        )
+        await self.async_set_unique_id(unique_id)
+        self._abort_if_unique_id_configured()
+        self._house_data = house_data
+        self._covers = _covers_from_plan(plan, assignments, [], remove_unmapped=True)
+        return await self.async_step_finish()
 
     async def _async_cover_finished(
         self, cover: dict[str, Any]
@@ -687,6 +851,11 @@ class CoverCompassOptionsFlow(_CoverFlowMixin, config_entries.OptionsFlowWithRel
         self._working_cover = {}
         self._editing_cover_id = None
         self._selection_action = ""
+        self._plan = None
+        self._plan_assignments = {}
+        self._plan_index = 0
+        self._plan_remove_unmapped = False
+        self._plan_update_house = True
 
     def _configured_covers(self) -> list[dict[str, Any]]:
         return list(self._options.get(CONF_COVERS, []))
@@ -695,7 +864,7 @@ class CoverCompassOptionsFlow(_CoverFlowMixin, config_entries.OptionsFlowWithRel
         self, _user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
         self._options = dict(self.config_entry.options)
-        menu = ["global", "add_cover"]
+        menu = ["global", "import_plan", "add_cover"]
         if self._configured_covers():
             menu.extend(["edit_cover", "duplicate_cover", "remove_cover"])
         return self.async_show_menu(step_id="init", menu_options=menu)
@@ -725,6 +894,44 @@ class CoverCompassOptionsFlow(_CoverFlowMixin, config_entries.OptionsFlowWithRel
                 ): _number(60, 3600, 1, "s"),
             }),
         )
+
+    def _plan_import_fields(self) -> dict[vol.Marker, object]:
+        return {
+            vol.Required("update_house", default=True): selector.BooleanSelector(),
+            vol.Required("remove_unmapped", default=False): selector.BooleanSelector(),
+        }
+
+    def _set_plan_import_options(self, user_input: Mapping[str, Any]) -> None:
+        self._plan_update_house = bool(user_input["update_house"])
+        self._plan_remove_unmapped = bool(user_input["remove_unmapped"])
+
+    def _suggest_plan_entity(self, shutter: PlannedShutter) -> str | None:
+        existing = next(
+            (
+                cover
+                for cover in self._configured_covers()
+                if cover.get("id") == shutter.id or cover.get("name") == shutter.name
+            ),
+            None,
+        )
+        return str(existing["entity_id"]) if existing is not None else None
+
+    async def _async_plan_import_finished(
+        self, plan: CoverPlan, assignments: Mapping[str, str]
+    ) -> config_entries.ConfigFlowResult:
+        self._options[CONF_COVERS] = _covers_from_plan(
+            plan,
+            assignments,
+            self._configured_covers(),
+            remove_unmapped=self._plan_remove_unmapped,
+        )
+        if self._plan_update_house:
+            data = dict(self.config_entry.data)
+            data.update(_house_data_from_plan(plan))
+            self.hass.config_entries.async_update_entry(
+                self.config_entry, title=plan.house.name, data=data
+            )
+        return self.async_create_entry(data=self._options)
 
     def _cover_selector_schema(self, action: str) -> vol.Schema:
         options: list[selector.SelectOptionDict] = [

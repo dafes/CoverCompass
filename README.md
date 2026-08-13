@@ -28,6 +28,18 @@ The cover shades only while the sun is within the configured exposure angle, abo
 
 Use **Configure** on the integration to add, edit, duplicate, remove, enable, or disable individual cover definitions. Use **Reconfigure** to change house coordinates, timezone, or overall rotation. No YAML is required.
 
+## Visual planner
+
+The no-build web planner in [`planner/`](planner/) uses Google Maps satellite imagery to create the house geometry and facade orientations. Serve it locally rather than opening the file directly:
+
+```bash
+python3 -m http.server --directory planner 8080
+```
+
+Open `http://localhost:8080`, enter a browser-restricted Google Maps API key with the Maps JavaScript API and Geocoding API enabled, find the house, trace its outline, and place the shutters. The planner keeps an unfinished draft in browser storage; the API key is not stored.
+
+Download the resulting JSON, then choose **Import visual plan** during initial CoverCompass setup. For an existing house, open **Configure → Import visual plan**. Home Assistant asks for the real `cover.*` entity behind each planned shutter. When an entity is already managed, its detailed policy is preserved while its plan name and facade orientation are updated. Removing definitions not present in the plan is an explicit, off-by-default import option.
+
 ## Orientation and solar exposure
 
 Azimuth is stored as degrees clockwise from geographic north:
@@ -89,11 +101,9 @@ logger:
 
 If an entity is renamed or removed, edit the cover definition or restore that entity. CoverCompass raises a Home Assistant Repair only when a reference is absent from both the state machine and entity registry, not for a normal temporary `unavailable` state.
 
-## Known limitations and future UI
+## Known limitations
 
 - The standard flow configures one time window per cover. The persisted/domain model supports multiple windows for future UI expansion.
 - Positionless covers necessarily reduce percentage targets to open/close actions.
 - Surrounding buildings, trees, detailed overhang geometry, radiation forecasts, HVAC coordination, presence, and learned behavior are outside this deterministic first release.
 - Weather-state confirmation uses the state labels exposed by Home Assistant; it does not call a weather provider.
-
-A future optional frontend can render a top-down virtual house, place stable cover IDs on facades, and display the numeric sun direction and exposure status. The backend already stores numeric orientations and stable IDs, so such a view does not require a schema redesign and is not required for full v1 operation.

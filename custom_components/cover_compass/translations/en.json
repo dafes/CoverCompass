@@ -4,6 +4,14 @@
     "flow_title": "{name}",
     "step": {
       "user": {
+        "title": "Set up CoverCompass",
+        "description": "Import a visual house plan or configure the house manually.",
+        "menu_options": {
+          "import_plan": "Import visual plan",
+          "manual_setup": "Set up manually"
+        }
+      },
+      "manual_setup": {
         "title": "House",
         "description": "Use Home Assistant's location or override it for this virtual house.",
         "data": {
@@ -15,6 +23,20 @@
         },
         "data_description": {
           "house_rotation": "Added clockwise to every configured facade orientation. Usually 0°."
+        }
+      },
+      "import_plan": {
+        "title": "Import visual plan",
+        "description": "Paste the JSON exported by the CoverCompass planner. The house and facade orientations are read from the plan; the next steps assign each planned shutter to a Home Assistant entity.",
+        "data": {
+          "plan_json": "Planner JSON"
+        }
+      },
+      "assign_plan_cover": {
+        "title": "Assign {name}",
+        "description": "Planned shutter {progress}, facing {azimuth}. Select the existing Home Assistant cover that operates it.",
+        "data": {
+          "entity_id": "Physical cover"
         }
       },
       "cover": {
@@ -137,8 +159,13 @@
       "clear_above_activation": "The clear threshold must not exceed the activation threshold.",
       "clear_below_activation": "The cloud clear threshold must not be below activation.",
       "safe_above_unsafe": "The safe wind threshold must not exceed the unsafe threshold.",
-      "invalid_cover_configuration": "The cover configuration is inconsistent. Review the entered values."
-      ,"confirmation_required": "Confirm removal to continue."
+      "invalid_cover_configuration": "The cover configuration is inconsistent. Review the entered values.",
+      "confirmation_required": "Confirm removal to continue.",
+      "invalid_plan_json": "The pasted value is not valid JSON.",
+      "invalid_plan": "This is not a valid CoverCompass plan.",
+      "unsupported_plan_version": "This planner export version is not supported.",
+      "plan_too_large": "The planner export is too large.",
+      "plan_entity_already_assigned": "This physical cover is already assigned to another planned shutter."
     },
     "abort": {
       "already_configured": "This house is already configured.",
@@ -151,6 +178,7 @@
         "title": "Manage CoverCompass",
         "menu_options": {
           "global": "Global settings",
+          "import_plan": "Import visual plan",
           "add_cover": "Add cover",
           "edit_cover": "Edit cover",
           "duplicate_cover": "Duplicate cover",
@@ -163,6 +191,25 @@
           "global_enabled": "Automation enabled",
           "dry_run": "Dry run",
           "reconcile_interval": "Reconciliation interval"
+        }
+      },
+      "import_plan": {
+        "title": "Import visual plan",
+        "description": "Paste the JSON exported by the CoverCompass planner, then assign every planned shutter to an existing Home Assistant cover. Existing policies for assigned entities are preserved while their names and orientations are updated.",
+        "data": {
+          "plan_json": "Planner JSON",
+          "update_house": "Update house name, location and time zone from plan",
+          "remove_unmapped": "Remove CoverCompass covers that are not assigned during this import"
+        },
+        "data_description": {
+          "remove_unmapped": "Physical Home Assistant entities are never deleted or moved. Only unmatched CoverCompass definitions are removed."
+        }
+      },
+      "assign_plan_cover": {
+        "title": "Assign {name}",
+        "description": "Planned shutter {progress}, facing {azimuth}. Select the existing Home Assistant cover that operates it.",
+        "data": {
+          "entity_id": "Physical cover"
         }
       },
       "edit_cover": {
@@ -271,8 +318,13 @@
       "clear_above_activation": "The clear threshold must not exceed the activation threshold.",
       "clear_below_activation": "The cloud clear threshold must not be below activation.",
       "safe_above_unsafe": "The safe wind threshold must not exceed the unsafe threshold.",
-      "invalid_cover_configuration": "The cover configuration is inconsistent. Review the entered values."
-      ,"confirmation_required": "Confirm removal to continue."
+      "invalid_cover_configuration": "The cover configuration is inconsistent. Review the entered values.",
+      "confirmation_required": "Confirm removal to continue.",
+      "invalid_plan_json": "The pasted value is not valid JSON.",
+      "invalid_plan": "This is not a valid CoverCompass plan.",
+      "unsupported_plan_version": "This planner export version is not supported.",
+      "plan_too_large": "The planner export is too large.",
+      "plan_entity_already_assigned": "This physical cover is already assigned to another planned shutter."
     }
   },
   "selector": {

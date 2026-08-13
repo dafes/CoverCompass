@@ -1,6 +1,6 @@
 [project]
 name = "cover-compass"
-version = "1.0.0"
+version = "1.1.0"
 description = "Orientation-aware cover control for Home Assistant"
 readme = "README.md"
 requires-python = ">=3.14"

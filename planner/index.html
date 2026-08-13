@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#10201b">
+    <title>CoverCompass Planner</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="api-gate" id="api-gate">
+      <form class="api-card" id="api-form">
+        <div class="mark" aria-hidden="true">↗</div>
+        <p class="eyebrow">CoverCompass</p>
+        <h1>Map your home to the sun.</h1>
+        <p class="lede">Draw the roof outline over satellite imagery, place each shutter on its facade, then export one plan for Home Assistant.</p>
+        <label for="api-key">Google Maps JavaScript API key</label>
+        <div class="api-row">
+          <input id="api-key" name="api-key" type="password" autocomplete="off" required placeholder="AIza…">
+          <button class="primary" type="submit">Open planner</button>
+        </div>
+        <p class="fine-print">The key is sent directly to Google and is not saved by this planner. Restrict it to this site's HTTP referrer.</p>
+        <p class="form-error" id="api-error" role="alert"></p>
+      </form>
+    </div>
+
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="CoverCompass Planner home">
+        <span class="brand-mark">↗</span>
+        <span>CoverCompass <small>Planner</small></span>
+      </a>
+      <div class="top-actions">
+        <button class="ghost" id="import-button" type="button">Open plan</button>
+        <input id="import-file" type="file" accept="application/json,.json" hidden>
+        <button class="primary compact" id="export-button" type="button">Export JSON</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="sidebar">
+        <section class="intro">
+          <p class="eyebrow">Visual setup</p>
+          <h2>Build the facade map</h2>
+          <p>Three short steps replace the repetitive orientation setup in Home Assistant.</p>
+        </section>
+
+        <section class="step" data-step="1">
+          <div class="step-heading">
+            <span class="step-number">1</span>
+            <div><h3>Find the house</h3><p>Satellite view stays north-up.</p></div>
+          </div>
+          <form class="search" id="search-form">
+            <input id="address" type="search" placeholder="Street, city or coordinates" aria-label="House address">
+            <button class="icon-button" type="submit" aria-label="Search">⌕</button>
+          </form>
+          <div class="field-grid">
+            <label>House name<input id="house-name" type="text" maxlength="100" value="Home"></label>
+            <label>Time zone<input id="time-zone" type="text" maxlength="100"></label>
+          </div>
+          <button class="text-button" id="use-center" type="button">Use current map center</button>
+          <p class="coordinates" id="coordinates">No location selected</p>
+        </section>
+
+        <section class="step" data-step="2">
+          <div class="step-heading">
+            <span class="step-number">2</span>
+            <div><h3>Trace the outline</h3><p>Click each outside corner of the roof.</p></div>
+          </div>
+          <div class="button-row">
+            <button class="secondary" id="draw-outline" type="button">Draw outline</button>
+            <button class="ghost" id="undo-point" type="button" disabled>Undo point</button>
+            <button class="primary" id="finish-outline" type="button" disabled>Close outline</button>
+          </div>
+          <p class="hint">After closing, drag any corner to refine the shape.</p>
+        </section>
+
+        <section class="step" data-step="3">
+          <div class="step-heading">
+            <span class="step-number">3</span>
+            <div><h3>Place shutters</h3><p>Click near a wall; it snaps to the facade.</p></div>
+          </div>
+          <button class="secondary full" id="place-shutter" type="button" disabled>Place a shutter</button>
+          <div class="shutter-list" id="shutter-list">
+            <p class="empty-state">Your shutters will appear here.</p>
+          </div>
+        </section>
+
+        <section class="export-card">
+          <div>
+            <p class="eyebrow">Ready for Home Assistant</p>
+            <p id="export-summary">Add an outline and at least one shutter.</p>
+          </div>
+          <div class="button-row">
+            <button class="ghost" id="copy-button" type="button">Copy JSON</button>
+            <button class="primary" id="download-button" type="button">Download</button>
+          </div>
+        </section>
+      </aside>
+
+      <section class="map-stage" aria-label="House planner map">
+        <div id="map"></div>
+        <div class="map-status" id="map-status">Enter a Maps API key to begin</div>
+        <div class="north-indicator" aria-label="Map north is up"><span>N</span><i></i></div>
+        <button class="clear-button" id="clear-plan" type="button">Clear plan</button>
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
